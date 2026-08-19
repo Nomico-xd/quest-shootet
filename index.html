@@ -3,88 +3,103 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Quest Shooter</title>
+<title>Quest Shooter 2 Pistolas</title>
 
 <style>
-*{box-sizing:border-box}
-html,body{
-    margin:0;
-    width:100%;
-    height:100%;
-    overflow:hidden;
-    background:#000;
-    font-family:Arial,sans-serif;
+* {
+    box-sizing: border-box;
 }
-#hud{
-    position:fixed;
-    top:15px;
-    left:15px;
-    z-index:10;
-    color:#fff;
-    background:#0008;
-    padding:12px 18px;
-    border-radius:12px;
-    font-size:20px;
-    line-height:1.5;
+
+html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+    font-family: Arial, sans-serif;
 }
-#menu{
-    position:fixed;
-    inset:0;
-    z-index:20;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    color:white;
-    text-align:center;
-    background:linear-gradient(#050505,#151515);
+
+#hud {
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    z-index: 10;
+    color: white;
+    background: rgba(0,0,0,.65);
+    padding: 12px 18px;
+    border-radius: 12px;
+    font-size: 20px;
+    line-height: 1.5;
+    pointer-events: none;
 }
-#menu h1{
-    font-size:48px;
-    margin:0 0 10px;
+
+#crosshair {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    width: 20px;
+    height: 20px;
+    transform: translate(-50%,-50%);
+    z-index: 5;
+    pointer-events: none;
 }
-#menu p{
-    color:#aaa;
-    margin-bottom:25px;
+
+#crosshair::before,
+#crosshair::after {
+    content: "";
+    position: absolute;
+    background: white;
 }
-button{
-    border:0;
-    border-radius:12px;
-    padding:16px 30px;
-    background:#e22;
-    color:white;
-    font-size:22px;
-    font-weight:bold;
-    cursor:pointer;
+
+#crosshair::before {
+    width: 20px;
+    height: 2px;
+    left: 0;
+    top: 9px;
 }
-button:hover{background:#f33}
-#crosshair{
-    position:fixed;
-    left:50%;
-    top:50%;
-    width:18px;
-    height:18px;
-    transform:translate(-50%,-50%);
-    z-index:5;
-    pointer-events:none;
+
+#crosshair::after {
+    width: 2px;
+    height: 20px;
+    left: 9px;
+    top: 0;
 }
-#crosshair:before,
-#crosshair:after{
-    content:"";
-    position:absolute;
-    background:#fff;
+
+#desktopMenu {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-align: center;
+    background: linear-gradient(#050505,#151515);
 }
-#crosshair:before{
-    width:18px;
-    height:2px;
-    top:8px;
-    left:0;
+
+#desktopMenu h1 {
+    font-size: 48px;
+    margin: 0 0 10px;
 }
-#crosshair:after{
-    width:2px;
-    height:18px;
-    left:8px;
-    top:0;
+
+#desktopMenu p {
+    color: #aaa;
+}
+
+#playButton {
+    border: 0;
+    border-radius: 12px;
+    padding: 16px 35px;
+    background: #e22;
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+#playButton:hover {
+    background: #f44;
 }
 </style>
 </head>
@@ -98,15 +113,23 @@ button:hover{background:#f33}
 
 <div id="crosshair"></div>
 
-<div id="menu">
+<div id="desktopMenu">
     <h1>🔫 QUEST SHOOTER</h1>
-    <p>Destruye los enemigos antes de que lleguen hasta ti.</p>
-    <button id="play">JUGAR</button>
+
+    <p>
+        ¡Dos pistolas para destruir a los enemigos!
+    </p>
+
+    <button id="playButton">
+        JUGAR
+    </button>
+
     <p style="font-size:14px">
-        PC: apunta con el ratón y dispara con clic.<br>
-        Quest 2: entra mediante el botón VR.
+        En Quest 2 pulsa ENTER VR.<br>
+        Después apunta a JUGAR y pulsa el gatillo.
     </p>
 </div>
+
 
 <script type="module">
 
@@ -117,9 +140,9 @@ import { VRButton } from
 "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/webxr/VRButton.js";
 
 
-// ==================================================
+// =====================================================
 // ESCENA
-// ==================================================
+// =====================================================
 
 const scene = new THREE.Scene();
 
@@ -127,40 +150,52 @@ scene.background =
     new THREE.Color(0x101018);
 
 scene.fog =
-    new THREE.Fog(0x101018,5,25);
+    new THREE.Fog(
+        0x101018,
+        5,
+        30
+    );
 
 
-// ==================================================
+// =====================================================
 // CÁMARA
-// ==================================================
+// =====================================================
 
 const camera =
     new THREE.PerspectiveCamera(
         70,
-        innerWidth / innerHeight,
+        window.innerWidth /
+        window.innerHeight,
         0.01,
         100
     );
 
-camera.position.set(0,1.6,0);
+camera.position.set(
+    0,
+    1.6,
+    0
+);
 
 
-// ==================================================
+// =====================================================
 // RENDERER
-// ==================================================
+// =====================================================
 
 const renderer =
     new THREE.WebGLRenderer({
-        antialias:true
+        antialias: true
     });
 
 renderer.setPixelRatio(
-    Math.min(devicePixelRatio,2)
+    Math.min(
+        window.devicePixelRatio,
+        2
+    )
 );
 
 renderer.setSize(
-    innerWidth,
-    innerHeight
+    window.innerWidth,
+    window.innerHeight
 );
 
 renderer.xr.enabled = true;
@@ -170,18 +205,23 @@ document.body.appendChild(
 );
 
 
-// ==================================================
-// BOTÓN VR
-// ==================================================
+// =====================================================
+// BOTÓN ENTER VR
+// =====================================================
+
+const vrButton =
+    VRButton.createButton(
+        renderer
+    );
 
 document.body.appendChild(
-    VRButton.createButton(renderer)
+    vrButton
 );
 
 
-// ==================================================
+// =====================================================
 // LUCES
-// ==================================================
+// =====================================================
 
 scene.add(
     new THREE.HemisphereLight(
@@ -197,14 +237,18 @@ const sun =
         2
     );
 
-sun.position.set(4,8,4);
+sun.position.set(
+    5,
+    8,
+    5
+);
 
 scene.add(sun);
 
 
-// ==================================================
+// =====================================================
 // JUGADOR
-// ==================================================
+// =====================================================
 
 const player =
     new THREE.Group();
@@ -220,159 +264,654 @@ scene.add(player);
 player.add(camera);
 
 
-// ==================================================
+// =====================================================
 // SUELO
-// ==================================================
+// =====================================================
 
 const floor =
     new THREE.Mesh(
-        new THREE.PlaneGeometry(30,30),
+        new THREE.PlaneGeometry(
+            30,
+            30
+        ),
         new THREE.MeshStandardMaterial({
-            color:0x303030
+            color: 0x303030
         })
     );
 
 floor.rotation.x =
-    -Math.PI/2;
+    -Math.PI / 2;
 
 scene.add(floor);
 
 
-// ==================================================
+// =====================================================
 // PAREDES
-// ==================================================
+// =====================================================
 
-function wall(
-    x,y,z,
-    sx,sy,sz
-){
+function createWall(
+    x,
+    y,
+    z,
+    sx,
+    sy,
+    sz
+) {
 
-    const w =
+    const wall =
         new THREE.Mesh(
             new THREE.BoxGeometry(
-                sx,sy,sz
+                sx,
+                sy,
+                sz
             ),
             new THREE.MeshStandardMaterial({
-                color:0x202025
+                color: 0x202025
             })
         );
 
-    w.position.set(
-        x,y,z
+    wall.position.set(
+        x,
+        y,
+        z
     );
 
-    scene.add(w);
+    scene.add(wall);
 }
 
-wall(0,2.5,-10,20,5,.2);
-wall(-10,2.5,0,.2,5,20);
-wall(10,2.5,0,.2,5,20);
+createWall(
+    0, 2.5, -10,
+    20, 5, .2
+);
+
+createWall(
+    -10, 2.5, 0,
+    .2, 5, 20
+);
+
+createWall(
+    10, 2.5, 0,
+    .2, 5, 20
+);
 
 
-// ==================================================
-// PISTOLA
-// ==================================================
+// =====================================================
+// CREAR PISTOLA
+// =====================================================
 
-const gun =
+function createGun() {
+
+    const gun =
+        new THREE.Group();
+
+
+    // Cuerpo
+
+    const body =
+        new THREE.Mesh(
+            new THREE.BoxGeometry(
+                .12,
+                .14,
+                .45
+            ),
+            new THREE.MeshStandardMaterial({
+                color: 0x111111
+            })
+        );
+
+    body.position.z =
+        -0.22;
+
+    gun.add(body);
+
+
+    // Empuñadura
+
+    const handle =
+        new THREE.Mesh(
+            new THREE.BoxGeometry(
+                .10,
+                .25,
+                .11
+            ),
+            new THREE.MeshStandardMaterial({
+                color: 0x181818
+            })
+        );
+
+    handle.position.set(
+        0,
+        -0.17,
+        -0.15
+    );
+
+    handle.rotation.x =
+        0.2;
+
+    gun.add(handle);
+
+
+    // Cañón
+
+    const barrel =
+        new THREE.Mesh(
+            new THREE.CylinderGeometry(
+                .035,
+                .035,
+                .30,
+                12
+            ),
+            new THREE.MeshStandardMaterial({
+                color: 0x555555
+            })
+        );
+
+    barrel.rotation.x =
+        Math.PI / 2;
+
+    barrel.position.z =
+        -0.55;
+
+    gun.add(barrel);
+
+
+    // Luz del arma
+
+    const light =
+        new THREE.PointLight(
+            0xff3333,
+            0,
+            2
+        );
+
+    light.position.z =
+        -0.7;
+
+    gun.add(light);
+
+    gun.userData.flash =
+        light;
+
+
+    return gun;
+}
+
+
+// =====================================================
+// MANDOS
+// =====================================================
+
+const controller1 =
+    renderer.xr.getController(0);
+
+const controller2 =
+    renderer.xr.getController(1);
+
+scene.add(controller1);
+scene.add(controller2);
+
+
+// =====================================================
+// DOS PISTOLAS
+// =====================================================
+
+const gun1 =
+    createGun();
+
+const gun2 =
+    createGun();
+
+
+// La pistola derecha
+
+gun1.position.set(
+    0,
+    -0.02,
+    -0.03
+);
+
+controller1.add(
+    gun1
+);
+
+
+// La pistola izquierda
+
+gun2.position.set(
+    0,
+    -0.02,
+    -0.03
+);
+
+controller2.add(
+    gun2
+);
+
+
+// =====================================================
+// MENÚ VR 3D
+// =====================================================
+
+const vrMenu =
     new THREE.Group();
 
-const body =
+vrMenu.visible = true;
+
+scene.add(vrMenu);
+
+
+// Fondo
+
+const menuBackground =
     new THREE.Mesh(
-        new THREE.BoxGeometry(
-            .12,.14,.45
+        new THREE.PlaneGeometry(
+            2.5,
+            1.7
         ),
-        new THREE.MeshStandardMaterial({
-            color:0x111111
+        new THREE.MeshBasicMaterial({
+            color: 0x080808,
+            transparent: true,
+            opacity: .92,
+            side: THREE.DoubleSide
         })
     );
 
-body.position.z=-.25;
-
-gun.add(body);
-
-
-const handle =
-    new THREE.Mesh(
-        new THREE.BoxGeometry(
-            .1,.25,.1
-        ),
-        new THREE.MeshStandardMaterial({
-            color:0x181818
-        })
-    );
-
-handle.position.set(
-    0,-.17,-.18
+vrMenu.add(
+    menuBackground
 );
 
-handle.rotation.x=.2;
 
-gun.add(handle);
+// Texto usando canvas
+
+function createText(
+    text,
+    size,
+    color
+) {
+
+    const canvas =
+        document.createElement(
+            "canvas"
+        );
+
+    canvas.width = 1024;
+    canvas.height = 512;
+
+    const ctx =
+        canvas.getContext(
+            "2d"
+        );
+
+    ctx.clearRect(
+        0,
+        0,
+        1024,
+        512
+    );
+
+    ctx.font =
+        "bold " + size + "px Arial";
+
+    ctx.fillStyle =
+        color;
+
+    ctx.textAlign =
+        "center";
+
+    ctx.textBaseline =
+        "middle";
+
+    ctx.fillText(
+        text,
+        512,
+        256
+    );
+
+    const texture =
+        new THREE.CanvasTexture(
+            canvas
+        );
+
+    const material =
+        new THREE.MeshBasicMaterial({
+            map: texture,
+            transparent: true
+        });
+
+    const mesh =
+        new THREE.Mesh(
+            new THREE.PlaneGeometry(
+                2,
+                1
+            ),
+            material
+        );
+
+    return mesh;
+}
 
 
-const barrel =
+// Título
+
+const title =
+    createText(
+        "QUEST SHOOTER",
+        90,
+        "#ffffff"
+    );
+
+title.position.set(
+    0,
+    .48,
+    .02
+);
+
+title.scale.set(
+    1,
+    .35,
+    1
+);
+
+vrMenu.add(title);
+
+
+// Botón
+
+const startButton3D =
     new THREE.Mesh(
-        new THREE.CylinderGeometry(
-            .035,.035,.3,12
+        new THREE.BoxGeometry(
+            1.5,
+            .42,
+            .08
         ),
-        new THREE.MeshStandardMaterial({
-            color:0x555555
+        new THREE.MeshBasicMaterial({
+            color: 0xdd2222
         })
     );
 
-barrel.rotation.x =
-    Math.PI/2;
-
-barrel.position.z =
-    -.57;
-
-gun.add(barrel);
-
-gun.position.set(
-    .25,
-    -.25,
-    -.5
+startButton3D.position.set(
+    0,
+    -.05,
+    .03
 );
 
-camera.add(gun);
+vrMenu.add(
+    startButton3D
+);
 
 
-// ==================================================
+// Texto del botón
+
+const startText =
+    createText(
+        "JUGAR",
+        100,
+        "#ffffff"
+    );
+
+startText.position.set(
+    0,
+    -.05,
+    .08
+);
+
+startText.scale.set(
+    .65,
+    .14,
+    1
+);
+
+vrMenu.add(startText);
+
+
+// Instrucción
+
+const instruction =
+    createText(
+        "Apunta y pulsa el gatillo",
+        55,
+        "#bbbbbb"
+    );
+
+instruction.position.set(
+    0,
+    -.55,
+    .03
+);
+
+instruction.scale.set(
+    1,
+    .18,
+    1
+);
+
+vrMenu.add(instruction);
+
+
+// =====================================================
+// COLOCAR MENÚ DELANTE DEL JUGADOR
+// =====================================================
+
+function positionVRMenu() {
+
+    const pos =
+        new THREE.Vector3(
+            0,
+            1.6,
+            -2.5
+        );
+
+    pos.applyMatrix4(
+        camera.matrixWorld
+    );
+
+    vrMenu.position.copy(
+        pos
+    );
+
+    vrMenu.lookAt(
+        camera.getWorldPosition(
+            new THREE.Vector3()
+        )
+    );
+}
+
+
+// =====================================================
 // VARIABLES
-// ==================================================
+// =====================================================
 
-let score=0;
-let lives=3;
-let playing=false;
+let score = 0;
+let lives = 3;
 
-const enemies=[];
-const bullets=[];
+let playing = false;
+
+const enemies = [];
+const bullets = [];
+
+let spawnTimer = 0;
 
 
-// ==================================================
-// CREAR ENEMIGO
-// ==================================================
+// =====================================================
+// EMPEZAR PARTIDA
+// =====================================================
 
-function spawnEnemy(){
+function startGame() {
+
+    score = 0;
+    lives = 3;
+
+    document.getElementById(
+        "score"
+    ).textContent = score;
+
+    document.getElementById(
+        "lives"
+    ).textContent = lives;
+
+
+    // Eliminar enemigos antiguos
+
+    for (
+        const enemy of enemies
+    ) {
+
+        scene.remove(
+            enemy
+        );
+    }
+
+    enemies.length = 0;
+
+
+    // Eliminar balas
+
+    for (
+        const bullet of bullets
+    ) {
+
+        scene.remove(
+            bullet
+        );
+    }
+
+    bullets.length = 0;
+
+
+    playing = true;
+
+    vrMenu.visible = false;
+
+    document.getElementById(
+        "desktopMenu"
+    ).style.display = "none";
+
+
+    // Crear enemigos iniciales
+
+    for (
+        let i = 0;
+        i < 3;
+        i++
+    ) {
+
+        spawnEnemy();
+    }
+}
+
+
+// =====================================================
+// GAME OVER
+// =====================================================
+
+function gameOver() {
+
+    playing = false;
+
+    vrMenu.visible = true;
+
+    positionVRMenu();
+
+    // Cambiar botón
+
+    startText.material.map =
+        createTextTexture(
+            "JUGAR OTRA VEZ"
+        );
+
+    startText.material.needsUpdate =
+        true;
+
+
+    if (
+        !renderer.xr.isPresenting
+    ) {
+
+        document.getElementById(
+            "desktopMenu"
+        ).style.display = "flex";
+    }
+}
+
+
+// =====================================================
+// TEXTURA PARA CAMBIAR BOTÓN
+// =====================================================
+
+function createTextTexture(
+    text
+) {
+
+    const canvas =
+        document.createElement(
+            "canvas"
+        );
+
+    canvas.width = 1024;
+    canvas.height = 512;
+
+    const ctx =
+        canvas.getContext(
+            "2d"
+        );
+
+    ctx.clearRect(
+        0,
+        0,
+        1024,
+        512
+    );
+
+    ctx.font =
+        "bold 80px Arial";
+
+    ctx.fillStyle =
+        "#ffffff";
+
+    ctx.textAlign =
+        "center";
+
+    ctx.textBaseline =
+        "middle";
+
+    ctx.fillText(
+        text,
+        512,
+        256
+    );
+
+    return new THREE.CanvasTexture(
+        canvas
+    );
+}
+
+
+// =====================================================
+// ENEMIGO
+// =====================================================
+
+function spawnEnemy() {
 
     const enemy =
         new THREE.Mesh(
             new THREE.BoxGeometry(
-                .55,.55,.55
+                .55,
+                .55,
+                .55
             ),
             new THREE.MeshStandardMaterial({
-                color:0xff2222
+                color: 0xff2222
             })
         );
 
     enemy.position.set(
-        (Math.random()-.5)*8,
-        .4 + Math.random()*2,
-        -4 - Math.random()*5
+        (Math.random() - .5) * 8,
+        .5 + Math.random() * 1.8,
+        -4 - Math.random() * 6
     );
 
     enemy.userData.speed =
-        .3 + Math.random()*.25;
+        .3 + Math.random() * .25;
 
     scene.add(enemy);
 
@@ -380,22 +919,45 @@ function spawnEnemy(){
 }
 
 
-// ==================================================
-// DISPARO
-// ==================================================
+// =====================================================
+// DISPARAR
+// =====================================================
 
 function shoot(
-    origin,
-    direction
-){
+    controller
+) {
+
+    if (!playing)
+        return;
+
+
+    const direction =
+        new THREE.Vector3(
+            0,
+            0,
+            -1
+        );
+
+    direction.applyQuaternion(
+        controller.quaternion
+    );
+
+
+    const origin =
+        controller.getWorldPosition(
+            new THREE.Vector3()
+        );
+
 
     const bullet =
         new THREE.Mesh(
             new THREE.SphereGeometry(
-                .045,8,8
+                .045,
+                8,
+                8
             ),
             new THREE.MeshBasicMaterial({
-                color:0xffff00
+                color: 0xffff00
             })
         );
 
@@ -408,109 +970,228 @@ function shoot(
         .clone()
         .multiplyScalar(18);
 
-    scene.add(bullet);
+    scene.add(
+        bullet
+    );
 
-    bullets.push(bullet);
+    bullets.push(
+        bullet
+    );
+
+
+    // Flash del arma
+
+    const gun =
+        controller === controller1
+            ? gun1
+            : gun2;
+
+    gun.userData.flash.intensity =
+        5;
+
+    setTimeout(
+        () => {
+
+            gun.userData.flash.intensity =
+                0;
+
+        },
+        60
+    );
 }
 
 
-// ==================================================
-// DISPARO CON RATÓN
-// ==================================================
+// =====================================================
+// DISPARAR CON LOS DOS MANDOS
+// =====================================================
+
+controller1.addEventListener(
+    "selectstart",
+    () => {
+
+        if (
+            !playing &&
+            vrMenu.visible
+        ) {
+
+            checkVRButton(
+                controller1
+            );
+
+        } else {
+
+            shoot(
+                controller1
+            );
+        }
+    }
+);
+
+
+controller2.addEventListener(
+    "selectstart",
+    () => {
+
+        if (
+            !playing &&
+            vrMenu.visible
+        ) {
+
+            checkVRButton(
+                controller2
+            );
+
+        } else {
+
+            shoot(
+                controller2
+            );
+        }
+    }
+);
+
+
+// =====================================================
+// RAYCAST DEL BOTÓN VR
+// =====================================================
+
+const buttonRaycaster =
+    new THREE.Raycaster();
+
+function checkVRButton(
+    controller
+) {
+
+    const direction =
+        new THREE.Vector3(
+            0,
+            0,
+            -1
+        );
+
+    direction.applyQuaternion(
+        controller.quaternion
+    );
+
+
+    const origin =
+        controller.getWorldPosition(
+            new THREE.Vector3()
+        );
+
+
+    buttonRaycaster.set(
+        origin,
+        direction
+    );
+
+
+    const hits =
+        buttonRaycaster.intersectObject(
+            startButton3D
+        );
+
+
+    if (
+        hits.length > 0
+    ) {
+
+        startGame();
+    }
+}
+
+
+// =====================================================
+// MOUSE
+// =====================================================
 
 window.addEventListener(
     "mousedown",
-    e => {
+    event => {
 
-        if(!playing) return;
+        if (
+            event.button !== 0
+        )
+            return;
 
-        if(e.button !== 0) return;
+        if (
+            renderer.xr.isPresenting
+        )
+            return;
+
+        if (
+            !playing
+        ) {
+
+            startGame();
+
+            return;
+        }
+
 
         const direction =
             new THREE.Vector3(
-                0,0,-1
+                0,
+                0,
+                -1
             );
 
         direction.applyQuaternion(
             camera.quaternion
         );
 
+
         const origin =
             camera.getWorldPosition(
                 new THREE.Vector3()
             );
 
-        shoot(
-            origin,
+
+        const bullet =
+            new THREE.Mesh(
+                new THREE.SphereGeometry(
+                    .045,
+                    8,
+                    8
+                ),
+                new THREE.MeshBasicMaterial({
+                    color: 0xffff00
+                })
+            );
+
+        bullet.position.copy(
+            origin
+        );
+
+        bullet.userData.velocity =
             direction
+            .clone()
+            .multiplyScalar(18);
+
+        scene.add(
+            bullet
+        );
+
+        bullets.push(
+            bullet
         );
     }
 );
 
 
-// ==================================================
-// MANDOS QUEST
-// ==================================================
-
-const controller1 =
-    renderer.xr.getController(0);
-
-const controller2 =
-    renderer.xr.getController(1);
-
-scene.add(controller1);
-scene.add(controller2);
-
-
-function setupController(
-    controller
-){
-
-    controller.addEventListener(
-        "selectstart",
-        () => {
-
-            if(!playing) return;
-
-            const direction =
-                new THREE.Vector3(
-                    0,0,-1
-                );
-
-            direction.applyQuaternion(
-                controller.quaternion
-            );
-
-            const origin =
-                controller.getWorldPosition(
-                    new THREE.Vector3()
-                );
-
-            shoot(
-                origin,
-                direction
-            );
-        }
-    );
-}
-
-setupController(controller1);
-setupController(controller2);
-
-
-// ==================================================
-// BALAS
-// ==================================================
+// =====================================================
+// ACTUALIZAR BALAS
+// =====================================================
 
 function updateBullets(
     delta
-){
+) {
 
-    for(
-        let i=bullets.length-1;
-        i>=0;
+    for (
+        let i = bullets.length - 1;
+        i >= 0;
         i--
-    ){
+    ) {
 
         const bullet =
             bullets[i];
@@ -520,43 +1201,64 @@ function updateBullets(
             delta
         );
 
-        if(
-            bullet.position.length()>40
-        ){
 
-            scene.remove(bullet);
+        if (
+            bullet.position.length() > 40
+        ) {
 
-            bullets.splice(i,1);
+            scene.remove(
+                bullet
+            );
+
+            bullets.splice(
+                i,
+                1
+            );
 
             continue;
         }
 
-        for(
-            let j=enemies.length-1;
-            j>=0;
+
+        for (
+            let j = enemies.length - 1;
+            j >= 0;
             j--
-        ){
+        ) {
 
             const enemy =
                 enemies[j];
 
-            if(
+
+            if (
                 bullet.position.distanceTo(
                     enemy.position
                 ) < .4
-            ){
+            ) {
 
-                scene.remove(enemy);
-                scene.remove(bullet);
+                scene.remove(
+                    enemy
+                );
 
-                enemies.splice(j,1);
-                bullets.splice(i,1);
+                scene.remove(
+                    bullet
+                );
+
+                enemies.splice(
+                    j,
+                    1
+                );
+
+                bullets.splice(
+                    i,
+                    1
+                );
 
                 score++;
 
                 document.getElementById(
                     "score"
-                ).textContent=score;
+                ).textContent =
+                    score;
 
                 break;
             }
@@ -565,38 +1267,45 @@ function updateBullets(
 }
 
 
-// ==================================================
-// ENEMIGOS
-// ==================================================
+// =====================================================
+// ACTUALIZAR ENEMIGOS
+// =====================================================
 
 function updateEnemies(
     delta
-){
+) {
 
-    const playerPos =
+    const playerPosition =
         player.getWorldPosition(
             new THREE.Vector3()
         );
 
-    for(
-        let i=enemies.length-1;
-        i>=0;
+
+    for (
+        let i = enemies.length - 1;
+        i >= 0;
         i--
-    ){
+    ) {
 
         const enemy =
             enemies[i];
 
+
         const direction =
-            playerPos
+            playerPosition
             .clone()
-            .sub(enemy.position)
+            .sub(
+                enemy.position
+            )
             .normalize();
+
 
         enemy.position.addScaledVector(
             direction,
-            enemy.userData.speed*delta
+            enemy.userData.speed *
+            delta
         );
+
 
         enemy.rotation.x +=
             delta;
@@ -604,23 +1313,34 @@ function updateEnemies(
         enemy.rotation.y +=
             delta;
 
-        if(
+
+        if (
             enemy.position.distanceTo(
-                playerPos
+                playerPosition
             ) < .7
-        ){
+        ) {
 
-            scene.remove(enemy);
+            scene.remove(
+                enemy
+            );
 
-            enemies.splice(i,1);
+            enemies.splice(
+                i,
+                1
+            );
 
             lives--;
 
+
             document.getElementById(
                 "lives"
-            ).textContent=lives;
+            ).textContent =
+                lives;
 
-            if(lives<=0){
+
+            if (
+                lives <= 0
+            ) {
 
                 gameOver();
             }
@@ -629,140 +1349,118 @@ function updateEnemies(
 }
 
 
-// ==================================================
-// GENERADOR DE ENEMIGOS
-// ==================================================
-
-let spawnTimer=0;
+// =====================================================
+// SPAWN
+// =====================================================
 
 function updateSpawner(
     delta
-){
+) {
 
-    spawnTimer+=delta;
+    spawnTimer +=
+        delta;
 
-    if(
-        spawnTimer>1.5 &&
-        enemies.length<10
-    ){
 
-        spawnTimer=0;
+    if (
+        spawnTimer > 1.5 &&
+        enemies.length < 10
+    ) {
+
+        spawnTimer = 0;
 
         spawnEnemy();
     }
 }
 
 
-// ==================================================
-// GAME OVER
-// ==================================================
-
-function gameOver(){
-
-    playing=false;
-
-    document.getElementById(
-        "menu"
-    ).style.display="flex";
-
-    document.querySelector(
-        "#menu h1"
-    ).textContent="💀 GAME OVER";
-
-    document.querySelector(
-        "#menu p"
-    ).textContent=
-        "Puntuación: "+score;
-
-    document.getElementById(
-        "play"
-    ).textContent="JUGAR OTRA VEZ";
-}
-
-
-// ==================================================
-// INICIAR
-// ==================================================
+// =====================================================
+// BOTÓN DESKTOP
+// =====================================================
 
 document.getElementById(
-    "play"
+    "playButton"
 ).addEventListener(
     "click",
     () => {
 
-        score=0;
-        lives=3;
+        startGame();
+    }
+);
+
+
+// =====================================================
+// ENTER / SALIR DE VR
+// =====================================================
+
+renderer.xr.addEventListener(
+    "sessionstart",
+    () => {
+
+        // Ocultamos el menú 2D
 
         document.getElementById(
-            "score"
-        ).textContent=score;
+            "desktopMenu"
+        ).style.display =
+            "none";
 
-        document.getElementById(
-            "lives"
-        ).textContent=lives;
 
-        enemies.forEach(
-            e=>scene.remove(e)
-        );
+        // Si no estamos jugando,
+        // mostramos menú 3D
 
-        enemies.length=0;
+        if (!playing) {
 
-        bullets.forEach(
-            b=>scene.remove(b)
-        );
+            vrMenu.visible = true;
 
-        bullets.length=0;
-
-        playing=true;
-
-        document.getElementById(
-            "menu"
-        ).style.display="none";
-
-        document.querySelector(
-            "#menu h1"
-        ).textContent=
-            "🔫 QUEST SHOOTER";
-
-        for(
-            let i=0;
-            i<3;
-            i++
-        ){
-
-            spawnEnemy();
+            positionVRMenu();
         }
     }
 );
 
 
-// ==================================================
+renderer.xr.addEventListener(
+    "sessionend",
+    () => {
+
+        if (!playing) {
+
+            document.getElementById(
+                "desktopMenu"
+            ).style.display =
+                "flex";
+        }
+    }
+);
+
+
+// =====================================================
 // RESIZE
-// ==================================================
+// =====================================================
 
 window.addEventListener(
     "resize",
     () => {
 
         camera.aspect =
-            innerWidth/innerHeight;
+            window.innerWidth /
+            window.innerHeight;
 
         camera.updateProjectionMatrix();
 
         renderer.setSize(
-            innerWidth,
-            innerHeight
+            window.innerWidth,
+            window.innerHeight
         );
     }
 );
 
 
-// ==================================================
+// =====================================================
 // GAME LOOP
-// ==================================================
+// =====================================================
 
 const clock =
     new THREE.Clock();
+
 
 renderer.setAnimationLoop(
     () => {
@@ -773,14 +1471,47 @@ renderer.setAnimationLoop(
                 .05
             );
 
-        if(playing){
 
-            updateBullets(delta);
+        if (
+            playing
+        ) {
 
-            updateEnemies(delta);
+            updateBullets(
+                delta
+            );
 
-            updateSpawner(delta);
+            updateEnemies(
+                delta
+            );
+
+            updateSpawner(
+                delta
+            );
         }
+
+
+        // Actualizamos la posición
+        // del menú si estamos en VR
+
+        if (
+            renderer.xr.isPresenting &&
+            vrMenu.visible
+        ) {
+
+            // Solo colocarlo al principio
+            // para que no persiga la cabeza
+
+            if (
+                !vrMenu.userData.positioned
+            ) {
+
+                positionVRMenu();
+
+                vrMenu.userData.positioned =
+                    true;
+            }
+        }
+
 
         renderer.render(
             scene,
