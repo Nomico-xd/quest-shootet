@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Quest Shooter</title>
+
+<style>
+*{box-sizing:border-box}
+html,body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#000;
+    font-family:Arial,sans-serif;
+}
+#hud{
+    position:fixed;
+    top:15px;
+    left:15px;
+    z-index:10;
+    color:#fff;
+    background:#0008;
+    padding:12px 18px;
+    border-radius:12px;
+    font-size:20px;
+    line-height:1.5;
+}
+#menu{
+    position:fixed;
+    inset:0;
+    z-index:20;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    color:white;
+    text-align:center;
+    background:linear-gradient(#050505,#151515);
+}
+#menu h1{
+    font-size:48px;
+    margin:0 0 10px;
+}
+#menu p{
+    color:#aaa;
+    margin-bottom:25px;
+}
+button{
+    border:0;
+    border-radius:12px;
+    padding:16px 30px;
+    background:#e22;
+    color:white;
+    font-size:22px;
+    font-weight:bold;
+    cursor:pointer;
+}
+button:hover{background:#f33}
+#crosshair{
+    position:fixed;
+    left:50%;
+    top:50%;
+    width:18px;
+    height:18px;
+    transform:translate(-50%,-50%);
+    z-index:5;
+    pointer-events:none;
+}
+#crosshair:before,
+#crosshair:after{
+    content:"";
+    position:absolute;
+    background:#fff;
+}
+#crosshair:before{
+    width:18px;
+    height:2px;
+    top:8px;
+    left:0;
+}
+#crosshair:after{
+    width:2px;
+    height:18px;
+    left:8px;
+    top:0;
+}
+</style>
+</head>
+
+<body>
+
+<div id="hud">
+    🎯 Puntos: <span id="score">0</span><br>
+    ❤️ Vidas: <span id="lives">3</span>
+</div>
+
+<div id="crosshair"></div>
+
+<div id="menu">
+    <h1>🔫 QUEST SHOOTER</h1>
+    <p>Destruye los enemigos antes de que lleguen hasta ti.</p>
+    <button id="play">JUGAR</button>
+    <p style="font-size:14px">
+        PC: apunta con el ratón y dispara con clic.<br>
+        Quest 2: entra mediante el botón VR.
+    </p>
+</div>
+
+<script type="module">
+
+import * as THREE from
+"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
+
+import { VRButton } from
+"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/webxr/VRButton.js";
+
+
+// ==================================================
+// ESCENA
+// ==================================================
+
+const scene = new THREE.Scene();
+
+scene.background =
+    new THREE.Color(0x101018);
+
+scene.fog =
+    new THREE.Fog(0x101018,5,25);
+
+
+// ==================================================
+// CÁMARA
+// ==================================================
+
+const camera =
+    new THREE.PerspectiveCamera(
+        70,
+        innerWidth / innerHeight,
+        0.01,
+        100
+    );
+
+camera.position.set(0,1.6,0);
+
+
+// ==================================================
+// RENDERER
+// ==================================================
+
+const renderer =
+    new THREE.WebGLRenderer({
+        antialias:true
+    });
+
+renderer.setPixelRatio(
+    Math.min(devicePixelRatio,2)
+);
+
+renderer.setSize(
+    innerWidth,
+    innerHeight
+);
+
+renderer.xr.enabled = true;
+
+document.body.appendChild(
+    renderer.domElement
+);
+
+
+// ==================================================
+// BOTÓN VR
+// ==================================================
+
+document.body.appendChild(
+    VRButton.createButton(renderer)
+);
+
+
+// ==================================================
+// LUCES
+// ==================================================
+
+scene.add(
+    new THREE.HemisphereLight(
+        0xffffff,
+        0x333333,
+        2
+    )
+);
+
+const sun =
+    new THREE.DirectionalLight(
+        0xffffff,
+        2
+    );
+
+sun.position.set(4,8,4);
+
+scene.add(sun);
+
+
+// ==================================================
+// JUGADOR
+// ==================================================
+
+const player =
+    new THREE.Group();
+
+player.position.set(
+    0,
+    0,
+    3
+);
+
+scene.add(player);
+
+player.add(camera);
+
+
+// ==================================================
+// SUELO
+// ==================================================
+
+const floor =
+    new THREE.Mesh(
+        new THREE.PlaneGeometry(30,30),
+        new THREE.MeshStandardMaterial({
+            color:0x303030
+        })
+    );
+
+floor.rotation.x =
+    -Math.PI/2;
+
+scene.add(floor);
+
+
+// ==================================================
+// PAREDES
+// ==================================================
+
+function wall(
+    x,y,z,
+    sx,sy,sz
+){
+
+    const w =
+        new THREE.Mesh(
+            new THREE.BoxGeometry(
+                sx,sy,sz
+            ),
+            new THREE.MeshStandardMaterial({
+                color:0x202025
+            })
+        );
+
+    w.position.set(
+        x,y,z
+    );
+
+    scene.add(w);
+}
+
+wall(0,2.5,-10,20,5,.2);
+wall(-10,2.5,0,.2,5,20);
+wall(10,2.5,0,.2,5,20);
+
+
+// ==================================================
+// PISTOLA
+// ==================================================
+
+const gun =
+    new THREE.Group();
+
+const body =
+    new THREE.Mesh(
+        new THREE.BoxGeometry(
+            .12,.14,.45
+        ),
+        new THREE.MeshStandardMaterial({
+            color:0x111111
+        })
+    );
+
+body.position.z=-.25;
+
+gun.add(body);
+
+
+const handle =
+    new THREE.Mesh(
+        new THREE.BoxGeometry(
+            .1,.25,.1
+        ),
+        new THREE.MeshStandardMaterial({
+            color:0x181818
+        })
+    );
+
+handle.position.set(
+    0,-.17,-.18
+);
+
+handle.rotation.x=.2;
+
+gun.add(handle);
+
+
+const barrel =
+    new THREE.Mesh(
+        new THREE.CylinderGeometry(
+            .035,.035,.3,12
+        ),
+        new THREE.MeshStandardMaterial({
+            color:0x555555
+        })
+    );
+
+barrel.rotation.x =
+    Math.PI/2;
+
+barrel.position.z =
+    -.57;
+
+gun.add(barrel);
+
+gun.position.set(
+    .25,
+    -.25,
+    -.5
+);
+
+camera.add(gun);
+
+
+// ==================================================
+// VARIABLES
+// ==================================================
+
+let score=0;
+let lives=3;
+let playing=false;
+
+const enemies=[];
+const bullets=[];
+
+
+// ==================================================
+// CREAR ENEMIGO
+// ==================================================
+
+function spawnEnemy(){
+
+    const enemy =
+        new THREE.Mesh(
+            new THREE.BoxGeometry(
+                .55,.55,.55
+            ),
+            new THREE.MeshStandardMaterial({
+                color:0xff2222
+            })
+        );
+
+    enemy.position.set(
+        (Math.random()-.5)*8,
+        .4 + Math.random()*2,
+        -4 - Math.random()*5
+    );
+
+    enemy.userData.speed =
+        .3 + Math.random()*.25;
+
+    scene.add(enemy);
+
+    enemies.push(enemy);
+}
+
+
+// ==================================================
+// DISPARO
+// ==================================================
+
+function shoot(
+    origin,
+    direction
+){
+
+    const bullet =
+        new THREE.Mesh(
+            new THREE.SphereGeometry(
+                .045,8,8
+            ),
+            new THREE.MeshBasicMaterial({
+                color:0xffff00
+            })
+        );
+
+    bullet.position.copy(
+        origin
+    );
+
+    bullet.userData.velocity =
+        direction
+        .clone()
+        .multiplyScalar(18);
+
+    scene.add(bullet);
+
+    bullets.push(bullet);
+}
+
+
+// ==================================================
+// DISPARO CON RATÓN
+// ==================================================
+
+window.addEventListener(
+    "mousedown",
+    e => {
+
+        if(!playing) return;
+
+        if(e.button !== 0) return;
+
+        const direction =
+            new THREE.Vector3(
+                0,0,-1
+            );
+
+        direction.applyQuaternion(
+            camera.quaternion
+        );
+
+        const origin =
+            camera.getWorldPosition(
+                new THREE.Vector3()
+            );
+
+        shoot(
+            origin,
+            direction
+        );
+    }
+);
+
+
+// ==================================================
+// MANDOS QUEST
+// ==================================================
+
+const controller1 =
+    renderer.xr.getController(0);
+
+const controller2 =
+    renderer.xr.getController(1);
+
+scene.add(controller1);
+scene.add(controller2);
+
+
+function setupController(
+    controller
+){
+
+    controller.addEventListener(
+        "selectstart",
+        () => {
+
+            if(!playing) return;
+
+            const direction =
+                new THREE.Vector3(
+                    0,0,-1
+                );
+
+            direction.applyQuaternion(
+                controller.quaternion
+            );
+
+            const origin =
+                controller.getWorldPosition(
+                    new THREE.Vector3()
+                );
+
+            shoot(
+                origin,
+                direction
+            );
+        }
+    );
+}
+
+setupController(controller1);
+setupController(controller2);
+
+
+// ==================================================
+// BALAS
+// ==================================================
+
+function updateBullets(
+    delta
+){
+
+    for(
+        let i=bullets.length-1;
+        i>=0;
+        i--
+    ){
+
+        const bullet =
+            bullets[i];
+
+        bullet.position.addScaledVector(
+            bullet.userData.velocity,
+            delta
+        );
+
+        if(
+            bullet.position.length()>40
+        ){
+
+            scene.remove(bullet);
+
+            bullets.splice(i,1);
+
+            continue;
+        }
+
+        for(
+            let j=enemies.length-1;
+            j>=0;
+            j--
+        ){
+
+            const enemy =
+                enemies[j];
+
+            if(
+                bullet.position.distanceTo(
+                    enemy.position
+                ) < .4
+            ){
+
+                scene.remove(enemy);
+                scene.remove(bullet);
+
+                enemies.splice(j,1);
+                bullets.splice(i,1);
+
+                score++;
+
+                document.getElementById(
+                    "score"
+                ).textContent=score;
+
+                break;
+            }
+        }
+    }
+}
+
+
+// ==================================================
+// ENEMIGOS
+// ==================================================
+
+function updateEnemies(
+    delta
+){
+
+    const playerPos =
+        player.getWorldPosition(
+            new THREE.Vector3()
+        );
+
+    for(
+        let i=enemies.length-1;
+        i>=0;
+        i--
+    ){
+
+        const enemy =
+            enemies[i];
+
+        const direction =
+            playerPos
+            .clone()
+            .sub(enemy.position)
+            .normalize();
+
+        enemy.position.addScaledVector(
+            direction,
+            enemy.userData.speed*delta
+        );
+
+        enemy.rotation.x +=
+            delta;
+
+        enemy.rotation.y +=
+            delta;
+
+        if(
+            enemy.position.distanceTo(
+                playerPos
+            ) < .7
+        ){
+
+            scene.remove(enemy);
+
+            enemies.splice(i,1);
+
+            lives--;
+
+            document.getElementById(
+                "lives"
+            ).textContent=lives;
+
+            if(lives<=0){
+
+                gameOver();
+            }
+        }
+    }
+}
+
+
+// ==================================================
+// GENERADOR DE ENEMIGOS
+// ==================================================
+
+let spawnTimer=0;
+
+function updateSpawner(
+    delta
+){
+
+    spawnTimer+=delta;
+
+    if(
+        spawnTimer>1.5 &&
+        enemies.length<10
+    ){
+
+        spawnTimer=0;
+
+        spawnEnemy();
+    }
+}
+
+
+// ==================================================
+// GAME OVER
+// ==================================================
+
+function gameOver(){
+
+    playing=false;
+
+    document.getElementById(
+        "menu"
+    ).style.display="flex";
+
+    document.querySelector(
+        "#menu h1"
+    ).textContent="💀 GAME OVER";
+
+    document.querySelector(
+        "#menu p"
+    ).textContent=
+        "Puntuación: "+score;
+
+    document.getElementById(
+        "play"
+    ).textContent="JUGAR OTRA VEZ";
+}
+
+
+// ==================================================
+// INICIAR
+// ==================================================
+
+document.getElementById(
+    "play"
+).addEventListener(
+    "click",
+    () => {
+
+        score=0;
+        lives=3;
+
+        document.getElementById(
+            "score"
+        ).textContent=score;
+
+        document.getElementById(
+            "lives"
+        ).textContent=lives;
+
+        enemies.forEach(
+            e=>scene.remove(e)
+        );
+
+        enemies.length=0;
+
+        bullets.forEach(
+            b=>scene.remove(b)
+        );
+
+        bullets.length=0;
+
+        playing=true;
+
+        document.getElementById(
+            "menu"
+        ).style.display="none";
+
+        document.querySelector(
+            "#menu h1"
+        ).textContent=
+            "🔫 QUEST SHOOTER";
+
+        for(
+            let i=0;
+            i<3;
+            i++
+        ){
+
+            spawnEnemy();
+        }
+    }
+);
+
+
+// ==================================================
+// RESIZE
+// ==================================================
+
+window.addEventListener(
+    "resize",
+    () => {
+
+        camera.aspect =
+            innerWidth/innerHeight;
+
+        camera.updateProjectionMatrix();
+
+        renderer.setSize(
+            innerWidth,
+            innerHeight
+        );
+    }
+);
+
+
+// ==================================================
+// GAME LOOP
+// ==================================================
+
+const clock =
+    new THREE.Clock();
+
+renderer.setAnimationLoop(
+    () => {
+
+        const delta =
+            Math.min(
+                clock.getDelta(),
+                .05
+            );
+
+        if(playing){
+
+            updateBullets(delta);
+
+            updateEnemies(delta);
+
+            updateSpawner(delta);
+        }
+
+        renderer.render(
+            scene,
+            camera
+        );
+    }
+);
+
+</script>
+
+</body>
+</html>
